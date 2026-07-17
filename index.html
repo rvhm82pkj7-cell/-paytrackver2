@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PayTrack</title>
+  <style>
+    :root{
+      --sky:#63B3FF;--sky-dark:#2F80ED;--sky-soft:#EAF6FF;--bg:#F6FAFD;--card:#FFF;
+      --text:#14213D;--muted:#6F7D90;--line:#E5EDF4;--success:#34C759;--warning:#FF9F0A;--danger:#FF3B30;
+      --shadow:0 10px 28px rgba(47,128,237,.10);--radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#EEF8FF 0,#F7FBFE 38%,#F6FAFD 100%);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .app{width:min(100%,460px);min-height:100vh;margin:auto;background:var(--bg);padding-bottom:96px;position:relative;overflow-x:hidden}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:24px 20px 14px;position:sticky;top:0;z-index:5;
+      background:rgba(246,250,253,.88);backdrop-filter:blur(16px)}
+    .brand{font-size:24px;font-weight:900;letter-spacing:-.6px}.brand span{color:var(--sky-dark)}
+    .top-actions{display:flex;gap:10px}.icon-btn{border:0;background:#fff;width:42px;height:42px;border-radius:14px;box-shadow:var(--shadow);font-size:19px;position:relative}
+    .badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;
+      display:flex;align-items:center;justify-content:center;font-weight:900}
+    .page{display:none;padding:0 18px 24px}.page.active{display:block}
+    .hero{background:linear-gradient(135deg,var(--sky),var(--sky-dark));color:#fff;border-radius:28px;padding:24px;box-shadow:0 16px 36px rgba(47,128,237,.25);margin-bottom:16px}
+    .eyebrow{font-size:13px;opacity:.9;font-weight:700}.hero-amount{font-size:42px;font-weight:900;letter-spacing:-1.5px;margin:8px 0}.hero-sub{font-size:13px;opacity:.9}
+    .card{background:var(--card);border-radius:var(--radius);padding:19px;box-shadow:var(--shadow);margin-bottom:14px;border:1px solid rgba(229,237,244,.8)}
+    .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.card-title{font-size:15px;font-weight:850}.link{font-size:13px;color:var(--sky-dark);font-weight:800}
+    .amount{font-size:30px;font-weight:900;letter-spacing:-1px}.meta{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.6}
+    .progress{height:10px;background:#EAF0F5;border-radius:999px;overflow:hidden;margin:12px 0 8px}.progress>div{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--sky),var(--sky-dark))}
+    .progress.warning>div{background:linear-gradient(90deg,#FFD95A,#FF9F0A)}
+    .goal-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.goal-name{font-weight:900;font-size:17px}.star{color:#FFB400}
+    .shift-item{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+    .shift-item:first-of-type{border-top:0}.datebox{width:54px;background:var(--sky-soft);border-radius:15px;padding:8px 6px;text-align:center;color:var(--sky-dark)}
+    .datebox strong{font-size:18px;display:block}.shift-time{font-weight:850}.shift-pay{font-weight:900}.section-title{font-size:24px;font-weight:900;margin:8px 2px 18px}
+    .calendar{background:#fff;border-radius:24px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;text-align:center}.dow{font-size:11px;color:var(--muted);font-weight:800}
+    .day{aspect-ratio:1;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;position:relative}
+    .day.has-shift{background:var(--sky-soft);color:var(--sky-dark);font-weight:900}.day.today{outline:2px solid var(--sky-dark)}.day.selected{background:var(--sky-dark);color:#fff}
+    .day.payday::after{content:"";position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--warning)}
+    .fab{position:fixed;right:max(18px,calc((100vw - 460px)/2 + 18px));bottom:88px;width:62px;height:62px;border-radius:22px;border:0;color:#fff;
+      background:linear-gradient(135deg,var(--sky),var(--sky-dark));font-size:32px;box-shadow:0 16px 30px rgba(47,128,237,.35);z-index:8}
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,460px);display:grid;grid-template-columns:repeat(4,1fr);
+      padding:9px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-top:1px solid var(--line);z-index:10}
+    .nav-btn{border:0;background:none;color:var(--muted);font-size:11px;font-weight:800;padding:6px 2px}.nav-btn span{display:block;font-size:22px;margin-bottom:2px}.nav-btn.active{color:var(--sky-dark)}
+    .field{margin-bottom:14px}label{display:block;font-size:13px;font-weight:850;margin-bottom:7px}
+    input,textarea,select{width:100%;border:1px solid var(--line);background:#fff;border-radius:15px;padding:14px 15px;outline:none;color:var(--text)}
+    input:focus,textarea:focus,select:focus{border-color:var(--sky);box-shadow:0 0 0 4px var(--sky-soft)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.primary{width:100%;border:0;border-radius:17px;padding:16px;color:#fff;font-weight:900;font-size:16px;
+      background:linear-gradient(135deg,var(--sky),var(--sky-dark));box-shadow:0 12px 22px rgba(47,128,237,.24)}
+    .secondary{width:100%;border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff;color:var(--sky-dark);font-weight:850}
+    .danger{width:100%;border:1px solid #ffd4d1;border-radius:15px;padding:13px;background:#fff;color:var(--danger);font-weight:850}
+    .optional-toggle{color:var(--sky-dark);font-weight:850;font-size:14px;margin:5px 0 14px}.hidden{display:none!important}
+    .salary-preview{background:var(--sky-soft);border-radius:18px;padding:16px;margin:14px 0}.salary-preview .amount{color:var(--sky-dark)}
+    .priority-badge{position:absolute;top:14px;right:14px;background:#FFF6D8;color:#A46F00;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900}
+    .goal-card-list .card{position:relative}.setting-row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-top:1px solid var(--line)}
+    .setting-row:first-child{border-top:0}.setting-val{color:var(--muted);font-weight:800}
+    .modal{position:fixed;inset:0;background:rgba(20,33,61,.38);z-index:30;display:none;align-items:flex-end;justify-content:center}.modal.show{display:flex}
+    .sheet{width:min(100%,460px);max-height:92vh;overflow:auto;background:var(--bg);border-radius:28px 28px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
+    .sheet-handle{width:44px;height:5px;background:#CFD8E2;border-radius:999px;margin:0 auto 14px}.sheet-title{font-size:22px;font-weight:900;margin-bottom:18px}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#14213D;color:#fff;padding:12px 18px;border-radius:14px;
+      z-index:50;font-weight:800;transition:.25s;white-space:nowrap}.toast.show{transform:translateX(-50%) translateY(0)}
+    .notice-item{padding:15px 0;border-top:1px solid var(--line)}.notice-item:first-child{border-top:0}.notice-title{font-weight:900}.notice-date{font-size:12px;color:var(--muted);margin-top:4px}
+    .empty{text-align:center;padding:24px 8px;color:var(--muted)}.pill{display:inline-block;background:var(--sky-soft);color:var(--sky-dark);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}
+    @media(max-width:360px){.hero-amount{font-size:36px}.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">Pay<span>Track</span></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="openNotices">🔔<span class="badge" id="noticeBadge">2</span></button>
+      <button class="icon-btn" id="openSettings">⚙️</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="eyebrow">2026年の収入</div>
+        <div class="hero-amount" id="yearIncome">¥0</div>
+        <div class="hero-sub">保存したシフトから自動集計</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">次の支給見込み額</div><button class="link" id="openSalaryDetail" style="border:0;background:none">内訳</button></div>
+        <div class="amount" id="nextSalary">¥0</div>
+        <div class="meta" id="salaryMeta">設定後に表示されます</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">扶養</div><button class="link" data-nav="settings" style="border:0;background:none">設定</button></div>
+        <div class="amount" style="font-size:25px" id="dependentRemain">あと ¥0</div>
+        <div class="progress warning"><div id="dependentProgress" style="width:0%"></div></div>
+        <div class="meta" id="dependentMeta">上限未設定</div>
+      </div>
+
+      <div class="card" id="priorityGoalCard">
+        <div class="card-head"><div class="card-title">優先目標</div><button class="link" data-nav="goals" style="border:0;background:none">すべて見る</button></div>
+        <div id="priorityGoalContent" class="empty">優先目標がありません</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">次のシフト</div><button class="link" data-nav="shifts" style="border:0;background:none">すべて見る</button></div>
+        <div id="homeShiftList"></div>
+      </div>
+    </section>
+
+    <section id="shifts" class="page">
+      <div class="section-title">シフト</div>
+      <div class="calendar">
+        <div class="calendar-head">
+          <button class="icon-btn" id="prevMonth">‹</button>
+          <strong id="calendarTitle"></strong>
+          <button class="icon-btn" id="nextMonth">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+      <div class="card" id="selectedShiftCard"></div>
+    </section>
+
+    <section id="goals" class="page">
+      <div class="section-title">目標</div>
+      <div class="goal-card-list" id="goalList"></div>
+      <button class="primary" id="addGoal">＋ 新しい目標を追加</button>
+    </section>
+
+    <section id="settings" class="page">
+      <div class="section-title">設定</div>
+      <div class="card">
+        <div class="setting-row"><strong>時給</strong><button class="setting-val" data-edit-setting="hourlyWage" style="border:0;background:none"></button></div>
+        <div class="setting-row"><strong>締め日</strong><button class="setting-val" data-edit-setting="closingDay" style="border:0;background:none"></button></div>
+        <div class="setting-row"><strong>給料日</strong><button class="setting-val" data-edit-setting="payday" style="border:0;background:none"></button></div>
+        <div class="setting-row"><strong>深夜倍率</strong><button class="setting-val" data-edit-setting="nightRate" style="border:0;background:none"></button></div>
+        <div class="setting-row"><strong>扶養上限</strong><button class="setting-val" data-edit-setting="dependentLimit" style="border:0;background:none"></button></div>
+      </div>
+      <div class="card">
+        <button class="setting-row" id="settingsNotices" style="width:100%;border:0;background:none;text-align:left"><strong>🔔 お知らせ</strong><span class="setting-val">›</span></button>
+        <button class="setting-row" id="contactBtn" style="width:100%;border:0;background:none;text-align:left"><strong>📩 お問い合わせ</strong><span class="setting-val">›</span></button>
+        <button class="setting-row" id="resetBtn" style="width:100%;border:0;background:none;text-align:left"><strong style="color:var(--danger)">データを初期化</strong><span class="setting-val">›</span></button>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="addShiftBtn">＋</button>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home"><span>⌂</span>ホーム</button>
+    <button class="nav-btn" data-page="shifts"><span>▦</span>シフト</button>
+    <button class="nav-btn" data-page="goals"><span>◎</span>目標</button>
+    <button class="nav-btn" data-page="settings"><span>⚙</span>設定</button>
+  </nav>
+</div>
+
+<div class="modal" id="shiftModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title" id="shiftModalTitle">シフトを追加</div>
+    <input type="hidden" id="editingShiftId">
+    <div class="row">
+      <div class="field"><label>開始時間</label><input id="startTime" type="time"></div>
+      <div class="field"><label>終了時間</label><input id="endTime" type="time"></div>
+    </div>
+    <div class="field"><label>休憩時間（分）</label><input id="breakMinutes" type="number" min="0"></div>
+    <div class="field"><label>勤務日</label><input id="workDate" type="date"></div>
+    <div class="optional-toggle" id="transportToggle">＋ 交通費を追加</div>
+    <div class="field hidden" id="transportField"><label>交通費</label><input id="transport" type="number" min="0"></div>
+    <div class="field"><label>メモ（任意）</label><textarea id="memo" rows="2"></textarea></div>
+    <div class="salary-preview"><div class="card-title">支給見込み額</div><div class="amount" id="salaryPreview">¥0</div><div class="meta" id="salaryBreakdown"></div></div>
+    <button class="primary" id="saveShift">シフトを保存</button>
+    <button class="danger hidden" style="margin-top:10px" id="deleteShift">このシフトを削除</button>
+    <button class="secondary" style="margin-top:10px" data-close="shiftModal">閉じる</button>
+  </div>
+</div>
+
+<div class="modal" id="goalModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">新しい目標</div>
+    <div class="field"><label>目標名</label><input id="goalName"></div>
+    <div class="field"><label>目標金額</label><input id="goalTarget" type="number" min="1"></div>
+    <div class="field"><label>現在の金額（任意）</label><input id="goalCurrent" type="number" min="0"></div>
+    <div class="field"><label><input id="goalPriority" type="checkbox" style="width:auto;margin-right:8px">優先目標にする</label></div>
+    <button class="primary" id="saveGoal">目標を保存</button>
+    <button class="secondary" style="margin-top:10px" data-close="goalModal">閉じる</button>
+  </div>
+</div>
+
+<div class="modal" id="noticesModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">お知らせ</div>
+    <div id="noticeList"></div>
+    <button class="secondary" style="margin-top:10px" data-close="noticesModal">閉じる</button>
+  </div>
+</div>
+
+<div class="modal" id="contactModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">お問い合わせ</div>
+    <div class="field"><label>お問い合わせ種別</label><select id="contactType"><option>不具合報告</option><option>機能の要望</option><option>その他</option></select></div>
+    <div class="field"><label>返信先メールアドレス</label><input id="contactEmail" type="email" placeholder="example@email.com"></div>
+    <div class="field"><label>内容</label><textarea id="contactText" rows="5" placeholder="できるだけ詳しく入力してください"></textarea></div>
+    <button class="primary" id="sendContact">送信する</button>
+    <button class="secondary" style="margin-top:10px" data-close="contactModal">閉じる</button>
+  </div>
+</div>
+
+<div class="modal" id="settingModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title" id="settingTitle">設定を変更</div>
+    <div class="field"><label id="settingLabel"></label><input id="settingInput" type="number"></div>
+    <input type="hidden" id="settingKey">
+    <button class="primary" id="saveSetting">保存</button>
+    <button class="secondary" style="margin-top:10px" data-close="settingModal">閉じる</button>
+  </div>
+</div>
+
+<div class="modal" id="salaryModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div><div class="sheet-title">次の給与の内訳</div>
+    <div id="salaryDetail"></div>
+    <button class="secondary" style="margin-top:10px" data-close="salaryModal">閉じる</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY='paytrack_interactive_v2';
+const defaultState={
+  settings:{hourlyWage:1200,closingDay:15,payday:25,nightRate:1.25,dependentLimit:1030000},
+  shifts:[
+    {id:crypto.randomUUID(),date:'2026-07-18',start:'18:00',end:'23:30',breakMinutes:60,transport:0,memo:''},
+    {id:crypto.randomUUID(),date:'2026-07-21',start:'17:00',end:'22:00',breakMinutes:0,transport:0,memo:''}
+  ],
+  goals:[
+    {id:crypto.randomUUID(),name:'F56 MINI購入',target:800000,current:350000,priority:true},
+    {id:crypto.randomUUID(),name:'レーシングシム',target:300000,current:40000,priority:false}
+  ],
+  notices:[
+    {id:1,title:'PayTrackへようこそ',body:'シフトを追加すると給与見込みが自動で更新されます。',date:'2026-07-17',read:false},
+    {id:2,title:'お問い合わせ機能を追加しました',body:'設定画面から不具合や要望を送れます。',date:'2026-07-17',read:false}
+  ]
+};
+let state=loadState();
+let viewMonth=new Date(2026,6,1);
+let selectedDate='2026-07-18';
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    return raw?JSON.parse(raw):structuredClone(defaultState);
+  }catch{return structuredClone(defaultState)}
+}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
+function yen(n){return '¥'+Math.round(n).toLocaleString('ja-JP')}
+function showToast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1800)}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+
+function go(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===page));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  document.getElementById('addShiftBtn').style.display=page==='settings'?'none':'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.nav)));
+document.getElementById('openSettings').addEventListener('click',()=>go('settings'));
+
+function minutes(v){const [h,m]=v.split(':').map(Number);return h*60+m}
+function overlap(s,e,a,b){return Math.max(0,Math.min(e,b)-Math.max(s,a))}
+function calcShift(s){
+  let st=minutes(s.start),en=minutes(s.end);if(en<=st)en+=1440;
+  const raw=Math.max(0,en-st), br=Math.max(0,Number(s.breakMinutes||0));
+  let night=overlap(st,en,1320,1440)+overlap(st,en,1440,1740)+overlap(st,en,0,300);
+  const paid=Math.max(0,raw-br);night=Math.min(night,paid);const normal=Math.max(0,paid-night);
+  const total=(normal/60)*state.settings.hourlyWage+(night/60)*state.settings.hourlyWage*state.settings.nightRate+Number(s.transport||0);
+  return {total:Math.round(total),normal,night};
+}
+function payrollKey(dateStr){
+  const d=new Date(dateStr+'T00:00:00');let y=d.getFullYear(),m=d.getMonth();
+  if(d.getDate()>state.settings.closingDay){m++;if(m>11){m=0;y++}}
+  return `${y}-${String(m+1).padStart(2,'0')}`;
+}
+function nextPayrollKey(){
+  const today=new Date();let y=today.getFullYear(),m=today.getMonth();
+  if(today.getDate()>state.settings.closingDay){m++;if(m>11){m=0;y++}}
+  return `${y}-${String(m+1).padStart(2,'0')}`;
+}
+function renderHome(){
+  const year=2026;
+  const yearTotal=state.shifts.filter(s=>s.date.startsWith(year+'-')).reduce((a,s)=>a+calcShift(s).total,0);
+  document.getElementById('yearIncome').textContent=yen(yearTotal);
+
+  const key=nextPayrollKey();
+  const target=state.shifts.filter(s=>payrollKey(s.date)===key);
+  const total=target.reduce((a,s)=>a+calcShift(s).total,0);
+  document.getElementById('nextSalary').textContent=yen(total);
+  const [py,pm]=key.split('-').map(Number);
+  const prevMonth=pm===1?12:pm-1, prevYear=pm===1?py-1:py;
+  const startDay=state.settings.closingDay+1;
+  const start=`${prevYear}年${prevMonth}月${startDay}日`;
+  const end=`${py}年${pm}月${state.settings.closingDay}日`;
+  document.getElementById('salaryMeta').innerHTML=`支給日：${py}年${pm}月${state.settings.payday}日<br>対象期間：${start}〜${end}<br>※控除前の支給見込み額`;
+
+  const remain=Math.max(0,state.settings.dependentLimit-yearTotal),pct=Math.min(100,yearTotal/state.settings.dependentLimit*100);
+  document.getElementById('dependentRemain').textContent='あと '+yen(remain);
+  document.getElementById('dependentProgress').style.width=pct+'%';
+  document.getElementById('dependentMeta').textContent=`上限 ${yen(state.settings.dependentLimit)} ・ あと約${Math.ceil(remain/state.settings.hourlyWage)}時間`;
+
+  const p=state.goals.find(g=>g.priority);
+  const pc=document.getElementById('priorityGoalContent');
+  if(!p) pc.innerHTML='<div class="empty">優先目標がありません</div>';
+  else{
+    const pct=Math.min(100,Math.round(p.current/p.target*100)),rem=Math.max(0,p.target-p.current);
+    pc.innerHTML=`<div class="goal-row"><div><div class="goal-name"><span class="star">★</span> ${p.name}</div><div class="meta">${yen(p.current)} / ${yen(p.target)}</div></div><div style="font-weight:900;color:var(--sky-dark)">${pct}%</div></div><div class="progress"><div style="width:${pct}%"></div></div><div class="meta">あと ${yen(rem)} ・ 約${Math.ceil(rem/state.settings.hourlyWage)}時間</div>`;
+  }
+
+  const list=document.getElementById('homeShiftList');
+  const today='2026-07-17';
+  const upcoming=[...state.shifts].filter(s=>s.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
+  list.innerHTML=upcoming.length?upcoming.map(shiftItemHTML).join(''):'<div class="empty">今後のシフトはありません</div>';
+}
+function shiftItemHTML(s){
+  const d=new Date(s.date+'T00:00:00'),days=['日','月','火','水','木','金','土'],c=calcShift(s);
+  return `<div class="shift-item"><div class="datebox"><small>${days[d.getDay()]}</small><strong>${d.getDate()}</strong><small>${d.getMonth()+1}月</small></div>
+  <div><div class="shift-time">${s.start}〜${s.end}</div><div class="meta">休憩${s.breakMinutes||0}分${s.memo?' ・ '+s.memo:''}</div></div><div class="shift-pay">${yen(c.total)}</div></div>`;
+}
+function renderGoals(){
+  const list=document.getElementById('goalList');
+  if(!state.goals.length){list.innerHTML='<div class="card empty">目標がありません</div>';return}
+  list.innerHTML=state.goals.map(g=>{
+    const pct=Math.min(100,Math.round(g.current/g.target*100)),rem=Math.max(0,g.target-g.current);
+    return `<div class="card">${g.priority?'<div class="priority-badge">★ 優先目標</div>':''}<div class="goal-name">${g.name}</div>
+      <div class="amount" style="font-size:26px;margin-top:12px">${yen(g.current)}</div><div class="meta">目標 ${yen(g.target)}</div>
+      <div class="progress"><div style="width:${pct}%"></div></div><div class="meta">あと ${yen(rem)} ・ 約${Math.ceil(rem/state.settings.hourlyWage)}時間</div>
+      <button class="danger" style="margin-top:14px" onclick="deleteGoal('${g.id}')">削除</button></div>`;
+  }).join('');
+}
+window.deleteGoal=id=>{state.goals=state.goals.filter(g=>g.id!==id);saveState();showToast('目標を削除しました')};
+
+function renderSettings(){
+  const s=state.settings, map={hourlyWage:yen(s.hourlyWage),closingDay:s.closingDay+'日',payday:s.payday+'日',nightRate:s.nightRate+'倍',dependentLimit:yen(s.dependentLimit)};
+  document.querySelectorAll('[data-edit-setting]').forEach(b=>b.textContent=map[b.dataset.editSetting]);
+}
+function renderNotices(){
+  const unread=state.notices.filter(n=>!n.read).length,b=document.getElementById('noticeBadge');b.textContent=unread;b.classList.toggle('hidden',unread===0);
+  document.getElementById('noticeList').innerHTML=state.notices.map(n=>`<div class="notice-item"><div class="notice-title">${n.title}</div><div class="meta">${n.body}</div><div class="notice-date">${n.date}</div></div>`).join('');
+}
+function renderCalendar(){
+  const grid=document.getElementById('calendarGrid'),y=viewMonth.getFullYear(),m=viewMonth.getMonth();
+  document.getElementById('calendarTitle').textContent=`${y}年${m+1}月`;
+  const dows=['日','月','火','水','木','金','土'];let html=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+  const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
+  for(let i=0;i<first;i++)html+='<div></div>';
+  for(let day=1;day<=last;day++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const has=state.shifts.some(s=>s.date===ds),today=ds==='2026-07-17',sel=ds===selectedDate,pay=day===state.settings.payday;
+    html+=`<button class="day ${has?'has-shift':''} ${today?'today':''} ${sel?'selected':''} ${pay?'payday':''}" data-date="${ds}" style="border:0">${day}</button>`;
+  }
+  grid.innerHTML=html;
+  grid.querySelectorAll('[data-date]').forEach(b=>b.addEventListener('click',()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDate()}));
+  renderSelectedDate();
+}
+function renderSelectedDate(){
+  const card=document.getElementById('selectedShiftCard'),items=state.shifts.filter(s=>s.date===selectedDate);
+  const d=new Date(selectedDate+'T00:00:00'),days=['日','月','火','水','木','金','土'];
+  if(!items.length){
+    card.innerHTML=`<div class="card-head"><div class="card-title">${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）</div></div><div class="empty">シフトはありません</div><button class="primary" onclick="openNewShift('${selectedDate}')">この日に追加</button>`;
+    return;
+  }
+  card.innerHTML=`<div class="card-head"><div class="card-title">${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）</div></div>`+
+    items.map(s=>`<div class="shift-item" style="grid-template-columns:1fr auto"><div><div class="shift-time">${s.start}〜${s.end}</div><div class="meta">休憩${s.breakMinutes||0}分 ・ ${yen(calcShift(s).total)}</div></div><button class="secondary" style="width:auto" onclick="editShift('${s.id}')">編集</button></div>`).join('');
+}
+function renderSalaryDetail(){
+  const key=nextPayrollKey(),items=state.shifts.filter(s=>payrollKey(s.date)===key).sort((a,b)=>a.date.localeCompare(b.date));
+  const total=items.reduce((a,s)=>a+calcShift(s).total,0);
+  document.getElementById('salaryDetail').innerHTML=items.length?items.map(shiftItemHTML).join('')+`<div class="card" style="margin-top:14px"><div class="card-title">合計</div><div class="amount">${yen(total)}</div></div>`:'<div class="empty">対象期間のシフトはありません</div>';
+}
+function renderAll(){renderHome();renderGoals();renderSettings();renderNotices();renderCalendar()}
+
+document.getElementById('prevMonth').addEventListener('click',()=>{viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-1,1);renderCalendar()});
+document.getElementById('nextMonth').addEventListener('click',()=>{viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()+1,1);renderCalendar()});
+document.getElementById('openSalaryDetail').addEventListener('click',()=>{renderSalaryDetail();openModal('salaryModal')});
+
+function formShift(){
+  return {id:document.getElementById('editingShiftId').value||crypto.randomUUID(),date:document.getElementById('workDate').value,start:document.getElementById('startTime').value,
+    end:document.getElementById('endTime').value,breakMinutes:Number(document.getElementById('breakMinutes').value||0),transport:Number(document.getElementById('transport').value||0),memo:document.getElementById('memo').value.trim()};
+}
+function updatePreview(){
+  const s=formShift();if(!s.start||!s.end){document.getElementById('salaryPreview').textContent='¥0';return}
+  const c=calcShift(s);document.getElementById('salaryPreview').textContent=yen(c.total);
+  document.getElementById('salaryBreakdown').textContent=`通常 ${Math.floor(c.normal/60)}時間${c.normal%60?c.normal%60+'分':''} ・ 深夜 ${Math.floor(c.night/60)}時間${c.night%60?c.night%60+'分':''}`;
+}
+['startTime','endTime','breakMinutes','transport'].forEach(id=>document.getElementById(id).addEventListener('input',updatePreview));
+document.getElementById('transportToggle').addEventListener('click',()=>document.getElementById('transportField').classList.toggle('hidden'));
+
+window.openNewShift=(date)=>{
+  document.getElementById('shiftModalTitle').textContent='シフトを追加';document.getElementById('editingShiftId').value='';
+  document.getElementById('workDate').value=date||selectedDate;document.getElementById('startTime').value='18:00';document.getElementById('endTime').value='23:30';
+  document.getElementById('breakMinutes').value='60';document.getElementById('transport').value='';document.getElementById('memo').value='';
+  document.getElementById('deleteShift').classList.add('hidden');document.getElementById('transportField').classList.add('hidden');updatePreview();openModal('shiftModal');
+};
+document.getElementById('addShiftBtn').addEventListener('click',()=>openNewShift(selectedDate));
+window.editShift=id=>{
+  const s=state.shifts.find(x=>x.id===id);if(!s)return;
+  document.getElementById('shiftModalTitle').textContent='シフトを編集';document.getElementById('editingShiftId').value=s.id;document.getElementById('workDate').value=s.date;
+  document.getElementById('startTime').value=s.start;document.getElementById('endTime').value=s.end;document.getElementById('breakMinutes').value=s.breakMinutes||0;
+  document.getElementById('transport').value=s.transport||'';document.getElementById('memo').value=s.memo||'';document.getElementById('deleteShift').classList.remove('hidden');
+  document.getElementById('transportField').classList.toggle('hidden',!s.transport);updatePreview();openModal('shiftModal');
+};
+document.getElementById('saveShift').addEventListener('click',()=>{
+  const s=formShift();if(!s.date||!s.start||!s.end){showToast('必須項目を入力してください');return}
+  const idx=state.shifts.findIndex(x=>x.id===s.id);if(idx>=0)state.shifts[idx]=s;else state.shifts.push(s);
+  selectedDate=s.date;saveState();closeModal('shiftModal');showToast(idx>=0?'シフトを更新しました':'シフトを保存しました');
+});
+document.getElementById('deleteShift').addEventListener('click',()=>{
+  const id=document.getElementById('editingShiftId').value;state.shifts=state.shifts.filter(s=>s.id!==id);saveState();closeModal('shiftModal');showToast('シフトを削除しました');
+});
+
+document.getElementById('addGoal').addEventListener('click',()=>openModal('goalModal'));
+document.getElementById('saveGoal').addEventListener('click',()=>{
+  const name=document.getElementById('goalName').value.trim(),target=Number(document.getElementById('goalTarget').value||0),current=Number(document.getElementById('goalCurrent').value||0),priority=document.getElementById('goalPriority').checked;
+  if(!name||target<=0){showToast('目標名と金額を入力してください');return}
+  if(priority)state.goals.forEach(g=>g.priority=false);
+  state.goals.push({id:crypto.randomUUID(),name,target,current,priority});saveState();closeModal('goalModal');showToast('目標を保存しました');
+  ['goalName','goalTarget','goalCurrent'].forEach(id=>document.getElementById(id).value='');document.getElementById('goalPriority').checked=false;
+});
+
+function openNotices(){state.notices.forEach(n=>n.read=true);saveState();openModal('noticesModal')}
+document.getElementById('openNotices').addEventListener('click',openNotices);document.getElementById('settingsNotices').addEventListener('click',openNotices);
+document.getElementById('contactBtn').addEventListener('click',()=>openModal('contactModal'));
+document.getElementById('sendContact').addEventListener('click',()=>{
+  const email=document.getElementById('contactEmail').value.trim(),text=document.getElementById('contactText').value.trim();
+  if(!email||!text){showToast('メールアドレスと内容を入力してください');return}
+  closeModal('contactModal');showToast('お問い合わせを受け付けました');
+  document.getElementById('contactText').value='';
+});
+
+const settingNames={hourlyWage:['時給','円'],closingDay:['締め日','日'],payday:['給料日','日'],nightRate:['深夜倍率','倍'],dependentLimit:['扶養上限','円']};
+document.querySelectorAll('[data-edit-setting]').forEach(b=>b.addEventListener('click',()=>{
+  const k=b.dataset.editSetting;document.getElementById('settingKey').value=k;document.getElementById('settingTitle').textContent=settingNames[k][0]+'を変更';
+  document.getElementById('settingLabel').textContent=settingNames[k][0];document.getElementById('settingInput').value=state.settings[k];openModal('settingModal');
+}));
+document.getElementById('saveSetting').addEventListener('click',()=>{
+  const k=document.getElementById('settingKey').value,v=Number(document.getElementById('settingInput').value);if(!v||v<0){showToast('正しい数値を入力してください');return}
+  state.settings[k]=v;saveState();closeModal('settingModal');showToast('設定を保存しました');
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('すべてのデータを初期状態に戻しますか？')){state=structuredClone(defaultState);saveState();showToast('初期化しました')}
+});
+renderAll();
+</script>
+</body>
+</html>
